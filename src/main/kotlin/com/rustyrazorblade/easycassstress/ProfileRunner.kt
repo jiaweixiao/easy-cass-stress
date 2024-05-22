@@ -109,7 +109,7 @@ class ProfileRunner(val context: StressContext,
         // move the getNextOperation into the queue thing
         for (op in queue.getNextOperation()) {
             val future = context.session.executeAsync(op.bound)
-            Futures.addCallback(future, OperationCallback(context, runner, op, paginate = context.mainArguments.paginate), MoreExecutors.directExecutor())
+            Futures.addCallback(future, OperationCallback(context, runner, op, populatePhase = false, paginate = context.mainArguments.paginate), MoreExecutors.directExecutor())
         }
 
     }
@@ -137,7 +137,7 @@ class ProfileRunner(val context: StressContext,
                 val future = context.session.executeAsync(op.bound)
                 Futures.addCallback(
                     future,
-                    OperationCallback(context, runner, op, false),
+                    OperationCallback(context, runner, op, populatePhase = true, false),
                     MoreExecutors.directExecutor()
                 )
             }

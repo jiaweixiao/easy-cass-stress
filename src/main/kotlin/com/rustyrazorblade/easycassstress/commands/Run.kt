@@ -176,6 +176,9 @@ class Run(val command: String) : IStressCommand {
     @Parameter(names = ["--deleterate", "--deletes"], description = "Deletion Rate, 0-1.  Workloads may have their own defaults.  Default is dependent on workload.")
     var deleteRate : Double? = null
 
+    // @Parameter(names = ["--logconfig"], description = "Config file of log4j2.")
+    // var logConfig: String = ""
+
     val log = logger()
 
     @Parameter(names = ["--max-requests"], description = "Sets the max requests per connection")
@@ -260,6 +263,7 @@ class Run(val command: String) : IStressCommand {
 
 
     override fun execute() {
+        // System.setProperty("log4j.configurationFile", logConfig)
 
         Preconditions.checkArgument(!(duration > 0 && iterations > 0L), "Duration and iterations shouldn't be both set at the same time. Please pick just one.")
         iterations = if (duration == 0L && iterations == 0L) DEFAULT_ITERATIONS else iterations // apply the default if the number of iterations wasn't set

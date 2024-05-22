@@ -14,6 +14,7 @@ import org.apache.logging.log4j.kotlin.logger
 class OperationCallback(val context: StressContext,
                         val runner: IStressRunner,
                         val op: Operation,
+                        val populatePhase: Boolean,
                         val paginate: Boolean = false) : FutureCallback<ResultSet> {
 
     companion object {
@@ -36,26 +37,36 @@ class OperationCallback(val context: StressContext,
         }
 
         val time = op.startTime.stop()
-
+        var mycount: Long
+        var optype: String
         // we log to the HDR histogram and do the callback for mutations
         // might extend this to select, but I can't see a reason for it now
         when (op) {
             is Operation.Mutation -> {
                 context.metrics.mutationHistogram.recordValue(time)
                 runner.onSuccess(op, result)
+                mycount = context.metrics.mutations.count
+                optype = "mutate"
             }
 
             is Operation.Deletion -> {
                 context.metrics.deleteHistogram.recordValue(time)
+                mycount = context.metrics.deletions.count
+                optype = "delete"
             }
 
             is Operation.SelectStatement -> {
                 context.metrics.selectHistogram.recordValue(time)
+                mycount = context.metrics.selects.count
+                optype = "select"
             }
             is Operation.Stop -> {
                 throw OperationStopException()
             }
         }
 
+        if (populatePhase == false && mycount % 10 == 0L) {
+            log.info { "$optype $time" }
+        }
     }
 }

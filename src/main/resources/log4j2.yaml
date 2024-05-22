@@ -2,40 +2,28 @@ Configuration:
 
   Properties:
     property:
-      - name: logs
+      - name: logdir
         value: "${env:EASY_CASS_STRESS_LOG_DIR:-${sys:user.home}/.easy-cass-stress}"
 
   status: info
   name: StandardConfiguration
-
-  thresholdFilter:
-    level: info
-
+  # To use asynchronous loggers
+  AsyncLoggerContextSelector: org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
 
 
   appenders:
-    RollingFile:
-      - name: File
-        fileName: "${logs}/stress.log"
-
-        filePattern: "${logs}/stress.%i.log.gz"
-
+    RandomAccessFile:
+      - name: fileappender
+        fileName: "${logdir}/stress.log"
+        immediateFlush: false
+        append: false
         PatternLayout:
-          Pattern: "%d %p %C{1.} [%t] %m%n"
-
-        policies:
-          SizeBasedTriggeringPolicy:
-            size: 10MB
-          OnStartupTriggeringPolicy: {}
-
-        Filters:
-          ThresholdFilter:
-            level: info
+          # https://logging.apache.org/log4j/2.x/manual/layouts.html#PatternDate
+          Pattern: "%d{UNIX_MILLIS} %p %m%n"
 
 
   Loggers:
     Root:
       level: info
       AppenderRef:
-        ref: File
-
+        ref: fileappender

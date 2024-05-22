@@ -12,6 +12,7 @@
 2. Print timestamp of starting main runner to console.
 3. Disable logging failed operations.
 4. Disable single line console reporter.
+5. Sample 10% of all successful operations with message `op duration(us)`, ignore populate phase. Use environment variable `EASY_CASS_STRESS_LOG_DIR` to set log directory.
 
 The remainder of this page is the same as https://github.com/rustyrazorblade/easy-cass-stress.
 
