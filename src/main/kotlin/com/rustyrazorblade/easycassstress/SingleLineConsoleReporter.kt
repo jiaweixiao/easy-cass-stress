@@ -19,7 +19,7 @@ class SingleLineConsoleReporter(registry: MetricRegistry) : ScheduledReporter(re
     val logger = logger()
     var lines = 0L
 
-    var opHeaders = listOf("Count", "Latency (p99)", "1min (req/s)")
+    var opHeaders = listOf("Count", "Latency (us) (p99)", "1min (req/s)")
     var width = mutableMapOf<Int, Int>( ).withDefault { 0 }
 
     // initialize all the headers

@@ -24,6 +24,7 @@ import me.tongfei.progressbar.ProgressBarStyle
 import org.apache.logging.log4j.kotlin.logger
 import java.io.File
 import java.io.PrintStream
+import java.time.Instant
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.schedule
@@ -154,6 +155,9 @@ class Run(val command: String) : IStressCommand {
     @Parameter(names = ["--prometheusport"], description = "Override the default prometheus port.  Set the default with EASY_CASS_STRESS_PROM_PORT, or set to 0 to disable.")
     var prometheusPort = System.getenv("EASY_CASS_STRESS_PROM_PORT")?.toInt() ?: 9500
 
+    @Parameter(names = ["--reportinterval"], description = "Interval (in ms) of reporting metrics to csv file.")
+    var reportInterval: Long = 3000
+
     @Parameter(names = ["--ssl"], description = "Enable SSL")
     var ssl = false
 
@@ -198,6 +202,18 @@ class Run(val command: String) : IStressCommand {
         tmp
     }
 
+    /**
+     * Lazily generate socket options
+     * https://docs.datastax.com/en/developer/java-driver/3.6/manual/socket_options/index.html
+     */
+    val socketOptions by lazy {
+        val tmp = SocketOptions()
+            .setConnectTimeoutMillis(100000)
+            .setReadTimeoutMillis(500000)
+            .setTcpNoDelay(true);
+        tmp
+    }
+
     val session by lazy {
 
         var builder = Cluster.builder()
@@ -205,6 +221,7 @@ class Run(val command: String) : IStressCommand {
                 .withPort(cqlPort)
                 .withCredentials(username, password)
                 .withQueryOptions(options)
+                .withSocketOptions(socketOptions)
                 .withPoolingOptions(PoolingOptions()
                         .setConnectionsPerHost(HostDistance.LOCAL, coreConnections, maxConnections)
                         .setConnectionsPerHost(HostDistance.REMOTE, coreConnections, maxConnections)
@@ -313,10 +330,10 @@ class Run(val command: String) : IStressCommand {
             // from the test workload, we need to reset the optimizer
             optimizer.reset()
 
-            metrics.startReporting()
+            metrics.startReporting(reportInterval)
             println("Prometheus metrics are available at http://localhost:$prometheusPort/")
 
-            println("Starting main runner")
+            println(Instant.now().toString() + " Starting main runner")
 
             val threads = mutableListOf<Thread>()
             for (runner in runners) {
@@ -460,7 +477,7 @@ class Run(val command: String) : IStressCommand {
         if(csvFile.isNotEmpty()) {
             reporters.add(FileReporter(registry, csvFile, command))
         }
-        reporters.add(SingleLineConsoleReporter(registry))
+        // reporters.add(SingleLineConsoleReporter(registry))
 
         return Metrics(registry, reporters, prometheusPort)
     }

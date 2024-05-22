@@ -1,3 +1,22 @@
+# Changes
+## Changes to file reporter :
+1. Change format to
+    ```csv
+    ,,Mutations,,,Reads,,,Deletes,,,Errors,
+    Epoch Time (ms), Elapsed Time (ms),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,1min (errors/s)
+    ```
+2. Replace `Instant.now()` with `System.currentTimeMillis()` to get timestamp.
+3. Add option `--reportinterval` in millisecond to control report interval.
+## Others
+1. Set datastax driver timeout.
+2. Print timestamp of starting main runner to console.
+3. Disable logging failed operations.
+4. Disable single line console reporter.
+
+The remainder of this page is the same as https://github.com/rustyrazorblade/easy-cass-stress.
+
+---------------------------------
+
 # easy-cass-stress: A workload centric stress tool and framework designed for ease of use.
 
 This project is a work in progress.

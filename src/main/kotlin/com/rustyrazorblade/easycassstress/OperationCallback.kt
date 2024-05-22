@@ -22,7 +22,7 @@ class OperationCallback(val context: StressContext,
 
     override fun onFailure(t: Throwable) {
         context.metrics.errors.mark()
-        log.error { t }
+        // log.error { t }
 
     }
 

@@ -6,8 +6,8 @@ import java.io.BufferedOutputStream
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
@@ -20,11 +20,10 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         TimeUnit.MILLISECONDS
 ) {
 
-    // date 24h time
-    // Thu-14Mar19-13.30.00
-    private val startTime = Date()
+    // UNIX timestamp in ms
+    private val startTime = System.currentTimeMillis()
 
-    private val opHeaders = listOf("Count", "Latency (p99)", "1min (req/s)").joinToString(",", postfix = ",")
+    private val opHeaders = listOf("Count", "Latency (us) (p99)", "1min (req/s)").joinToString(",", postfix = ",")
     private val errorHeaders = listOf("Count", "1min (errors/s)").joinToString(",")
 
     val outputFile = File(outputFileName)
@@ -34,7 +33,7 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
 
         buffer = if(outputFileName.endsWith(".gz"))  GZIPOutputStream(outputFile.outputStream()).bufferedWriter() else outputFile.bufferedWriter()
 
-        buffer.write("# easy-cass-stress run at $startTime")
+        buffer.write("# easy-cass-stress run at $startTime (unix ts in ms)")
         buffer.newLine()
         buffer.write("# $command")
         buffer.newLine()
@@ -45,7 +44,7 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         buffer.write("Errors,")
         buffer.newLine()
 
-        buffer.write("Timestamp, Elapsed Time,")
+        buffer.write("Epoch Time (ms), Elapsed Time (ms),")
         buffer.write(opHeaders)
         buffer.write(opHeaders)
         buffer.write(opHeaders)
@@ -56,7 +55,7 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
     private fun Timer.getMetricsList(): List<Any> {
         val duration = convertDuration(this.snapshot.get99thPercentile())
 
-        return listOf(this.count, duration, this.oneMinuteRate)
+        return listOf(this.count, DecimalFormat("##.##").format(duration), DecimalFormat("##.##").format(this.oneMinuteRate))
     }
 
     override fun report(gauges: SortedMap<String, Gauge<Any>>?,
@@ -65,10 +64,10 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
                         meters: SortedMap<String, Meter>?,
                         timers: SortedMap<String, Timer>?) {
 
-        val timestamp = Instant.now().toString()
-        val elapsedTime = Instant.now().minusMillis(startTime.time).toEpochMilli() / 1000
+        val timestamp = System.currentTimeMillis()
+        val elapsedTime = timestamp - startTime
 
-        buffer.write(timestamp + "," + elapsedTime + ",")
+        buffer.write(timestamp.toString() + "," + elapsedTime.toString() + ",")
 
         val writeRow = timers!!["mutations"]!!
                 .getMetricsList()
@@ -89,7 +88,7 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         buffer.write(deleteRow)
 
         val errors = meters!!["errors"]!!
-        val errorRow = listOf(errors.count, errors.oneMinuteRate)
+        val errorRow = listOf(errors.count, DecimalFormat("##.##").format(errors.oneMinuteRate))
                 .joinToString(",", postfix = "\n")
 
         buffer.write(errorRow)

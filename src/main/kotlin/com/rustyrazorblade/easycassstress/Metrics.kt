@@ -18,9 +18,9 @@ class Metrics(val metricRegistry: MetricRegistry, val reporters: List<ScheduledR
     val server: Optional<HTTPServer>
 
 
-    fun startReporting() {
+    fun startReporting(interval: Long) {
         for(reporter in reporters)
-            reporter.start(3, TimeUnit.SECONDS)
+            reporter.start(interval, TimeUnit.MILLISECONDS)
     }
 
     fun shutdown() {
