@@ -12,14 +12,14 @@ import org.apache.logging.log4j.kotlin.logger
 class SingleLineConsoleReporter(registry: MetricRegistry) : ScheduledReporter(registry,
     "single-line-console-reporter",
     MetricFilter.ALL,
-    TimeUnit.SECONDS,
-    TimeUnit.MILLISECONDS
+    TimeUnit.SECONDS, /* rateUnit */
+    TimeUnit.MILLISECONDS /* durationUnit */
     ) {
 
     val logger = logger()
     var lines = 0L
 
-    var opHeaders = listOf("Count", "Latency (us) (p99)", "1min (req/s)")
+    var opHeaders = listOf("Count", "Latency (ms) (p99)", "1min (req/s)")
     var width = mutableMapOf<Int, Int>( ).withDefault { 0 }
 
     // initialize all the headers
@@ -57,6 +57,7 @@ class SingleLineConsoleReporter(registry: MetricRegistry) : ScheduledReporter(re
             with(queryType) {
                 printColumn(count, state.getAndIncrement())
 
+                // durationUnit is ms
                 val duration = convertDuration(snapshot.get99thPercentile())
 
                 printColumn(duration, state.getAndIncrement())
