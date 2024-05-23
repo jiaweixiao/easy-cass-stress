@@ -187,7 +187,7 @@ class Run(val command: String) : IStressCommand {
     @Parameter(names = ["--max-connections"], description = "Sets the number of max connections per host")
     var maxConnections : Int = 8
 
-    @Parameter(names = ["--hdr"], description = "Print HDR Histograms using this prefix")
+    @Parameter(names = ["--hdr"], description = "Print HDR Histograms using this prefix, time unit is nanosecond")
     var hdrHistogramPrefix = ""
 
     /**
@@ -363,6 +363,8 @@ class Run(val command: String) : IStressCommand {
                                    Pair(metrics.deleteHistogram, "deletes"))
                 for (entry in pairs) {
                     val fp = File(hdrHistogramPrefix + "-" + entry.second + ".txt")
+                    // The oritinal value is in ns,
+                    // the output value unit scaling ratio is 1_000_000.0
                     entry.first.outputPercentileDistribution(PrintStream(fp), 1_000_000.0)
                 }
             }

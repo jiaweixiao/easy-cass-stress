@@ -16,14 +16,14 @@ import java.util.zip.GZIPOutputStream
 class FileReporter(registry: MetricRegistry, outputFileName: String, command: String) : ScheduledReporter(registry,
         "file-reporter",
         MetricFilter.ALL,
-        TimeUnit.SECONDS,
-        TimeUnit.MILLISECONDS
+        TimeUnit.SECONDS, /* rateUnit */
+        TimeUnit.MILLISECONDS /* durationUnit */
 ) {
 
     // UNIX timestamp in ms
     private val startTime = System.currentTimeMillis()
 
-    private val opHeaders = listOf("Count", "Latency (us) (p99)", "1min (req/s)").joinToString(",", postfix = ",")
+    private val opHeaders = listOf("Count", "Latency (ms) (p99)", "1min (req/s)").joinToString(",", postfix = ",")
     private val errorHeaders = listOf("Count", "1min (errors/s)").joinToString(",")
 
     val outputFile = File(outputFileName)
@@ -53,6 +53,7 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
     }
 
     private fun Timer.getMetricsList(): List<Any> {
+        // durationUnit is ms
         val duration = convertDuration(this.snapshot.get99thPercentile())
 
         return listOf(this.count, DecimalFormat("##.##").format(duration), DecimalFormat("##.##").format(this.oneMinuteRate))

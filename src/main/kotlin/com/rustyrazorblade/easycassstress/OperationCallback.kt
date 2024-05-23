@@ -35,6 +35,8 @@ class OperationCallback(val context: StressContext,
             }
         }
 
+        // Return the elapsed time in nanoseconds.
+        // https://javadoc.io/static/io.dropwizard.metrics/metrics-core/3.1.2/com/codahale/metrics/Timer.Context.html
         val time = op.startTime.stop()
 
         // we log to the HDR histogram and do the callback for mutations
