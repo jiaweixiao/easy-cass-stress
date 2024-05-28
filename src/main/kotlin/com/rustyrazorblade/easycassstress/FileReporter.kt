@@ -24,7 +24,8 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
     private val startTime = System.currentTimeMillis()
 
     private val opHeaders = listOf("Count", "Latency (ms) (p99)", "1min (req/s)").joinToString(",", postfix = ",")
-    private val errorHeaders = listOf("Count", "1min (errors/s)").joinToString(",")
+    private val errorHeaders = listOf("Count", "1min (errors/s)").joinToString(",", postfix = ",")
+    private val driverHeaders = "Count,Count"
 
     val outputFile = File(outputFileName)
     val buffer : BufferedWriter
@@ -41,7 +42,9 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         buffer.write(",,Mutations,,,")
         buffer.write("Reads,,,")
         buffer.write("Deletes,,,")
-        buffer.write("Errors,")
+        buffer.write("Errors,,")
+        buffer.write("InFlights,")
+        buffer.write("RequestQueueDepth")
         buffer.newLine()
 
         buffer.write("Epoch Time (ms), Elapsed Time (ms),")
@@ -49,6 +52,7 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         buffer.write(opHeaders)
         buffer.write(opHeaders)
         buffer.write(errorHeaders)
+        buffer.write(driverHeaders)
         buffer.newLine()
     }
 
@@ -90,9 +94,18 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
 
         val errors = meters!!["errors"]!!
         val errorRow = listOf(errors.count, DecimalFormat("##.##").format(errors.oneMinuteRate))
-                .joinToString(",", postfix = "\n")
+                .joinToString(",", postfix = ",")
 
         buffer.write(errorRow)
+
+        // Metric from driver
+        val inflights = gauges!!["in-flight-requests"]!!
+                .getValue()
+        val rqd = gauges!!["request-queue-depth"]!!
+                .getValue()
+        val driverRow = "$inflights,$rqd"
+        buffer.write(driverRow)
+        buffer.newLine()
     }
 
     override fun stop() {

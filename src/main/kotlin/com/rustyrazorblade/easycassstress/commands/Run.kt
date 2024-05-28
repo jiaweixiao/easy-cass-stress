@@ -225,6 +225,7 @@ class Run(val command: String) : IStressCommand {
                 .withCredentials(username, password)
                 .withQueryOptions(options)
                 .withSocketOptions(socketOptions)
+                .withoutJMXReporting()
                 .withPoolingOptions(PoolingOptions()
                         .setConnectionsPerHost(HostDistance.LOCAL, coreConnections, maxConnections)
                         .setConnectionsPerHost(HostDistance.REMOTE, coreConnections, maxConnections)
@@ -311,7 +312,7 @@ class Run(val command: String) : IStressCommand {
         plugin.instance.prepare(session)
 
         // Both of the following are set in the try block, so this is OK
-        val metrics = createMetrics()
+        val metrics = createMetrics(session.getCluster())
 
         // set up the rate limiter optimizer and put it on a schedule
         var optimizer = RateLimiterOptimizer(rateLimiter, metrics, maxReadLatency, maxWriteLatency)
@@ -474,9 +475,16 @@ class Run(val command: String) : IStressCommand {
         return runners
     }
 
-    private fun createMetrics(): Metrics {
+    private fun createMetrics(cluster: Cluster): Metrics {
         println("Initializing metrics")
         val registry = MetricRegistry()
+
+        // To get metrics in driver
+        // https://docs.datastax.com/en/drivers/java/3.11/com/datastax/driver/core/Metrics.html
+        // InFlightRequests: Counts requests that have already been sent to Cassandra and are currently being processed. They are in connections.
+        registry.register("in-flight-requests", cluster.getMetrics().getInFlightRequests());
+        // RequestQueueDepth(pendingBorrowCount): Counts requests waiting for a connection to be available from the pool.
+        registry.register("request-queue-depth", cluster.getMetrics().getRequestQueueDepth());
 
         val reporters = mutableListOf<ScheduledReporter>()
 
