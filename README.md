@@ -2,17 +2,18 @@
 ## Changes to file reporter :
 1. Change format to
     ```csv
-    ,,Mutations,,,Reads,,,Deletes,,,Errors,
-    Epoch Time (ms), Elapsed Time (ms),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,1min (errors/s)
+    ,,Mutations,,,Reads,,,Deletes,,,Errors,,InFlights,RequestQueueDepth
+    Epoch Time (ms), Elapsed Time (ms),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,1min (errors/s),Count,Count
     ```
 2. Replace `Instant.now()` with `System.currentTimeMillis()` to get timestamp.
 3. Add option `--reportinterval` in millisecond to control report interval.
+4. Report queuing stats from [driver](https://docs.datastax.com/en/drivers/java/3.11/com/datastax/driver/core/Metrics.html). `InFlights` counts requests that have already been sent to Cassandra and are currently being processed. They are in connections. `RequestQueueDepth`c ounts requests waiting for a connection to be available from the pool.
 ## Others
 1. Set datastax driver timeout.
 2. Print timestamp of starting main runner to console.
 3. Disable logging failed operations.
 4. Disable single line console reporter.
-
+5. Disable driver reporting of metrics through JMX.
 The remainder of this page is the same as https://github.com/rustyrazorblade/easy-cass-stress.
 
 ---------------------------------
