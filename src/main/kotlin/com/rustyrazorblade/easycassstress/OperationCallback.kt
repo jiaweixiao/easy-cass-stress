@@ -39,6 +39,10 @@ class OperationCallback(val context: StressContext,
         // https://javadoc.io/static/io.dropwizard.metrics/metrics-core/3.1.2/com/codahale/metrics/Timer.Context.html
         val time = op.startTime.stop()
 
+        // Get or regist before use as it may be removed after each report.
+        val tmpallops = context.metrics.metricRegistry.histogram("tmpallops")
+        tmpallops.update(time)
+
         // we log to the HDR histogram and do the callback for mutations
         // might extend this to select, but I can't see a reason for it now
         when (op) {

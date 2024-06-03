@@ -19,13 +19,14 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         TimeUnit.SECONDS, /* rateUnit */
         TimeUnit.MILLISECONDS /* durationUnit */
 ) {
+    private val registry = registry
 
     // UNIX timestamp in ms
     private val startTime = System.currentTimeMillis()
 
-    private val opHeaders = listOf("Count", "Latency (ms) (p99)", "1min (req/s)").joinToString(",", postfix = ",")
-    private val errorHeaders = listOf("Count", "1min (errors/s)").joinToString(",", postfix = ",")
-    private val driverHeaders = "Count,Count"
+    private val opHeaders = listOf("Delta Count", "Latency (ms) (p99)", "Latency (ms) (avg)").joinToString(",", postfix = ",")
+    private val errorHeaders = listOf("Accum Count", "1min (errors/s)").joinToString(",", postfix = ",")
+    private val driverHeaders = "Current Count,Current Count"
 
     val outputFile = File(outputFileName)
     val buffer : BufferedWriter
@@ -39,28 +40,25 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
         buffer.write("# $command")
         buffer.newLine()
 
-        buffer.write(",,Mutations,,,")
-        buffer.write("Reads,,,")
-        buffer.write("Deletes,,,")
+        buffer.write(",,TmpAllOps,,,")
         buffer.write("Errors,,")
         buffer.write("InFlights,")
         buffer.write("RequestQueueDepth")
         buffer.newLine()
 
-        buffer.write("Epoch Time (ms), Elapsed Time (ms),")
-        buffer.write(opHeaders)
-        buffer.write(opHeaders)
+        buffer.write("Epoch Time (ms),Elapsed Time (ms),")
         buffer.write(opHeaders)
         buffer.write(errorHeaders)
         buffer.write(driverHeaders)
         buffer.newLine()
     }
 
-    private fun Timer.getMetricsList(): List<Any> {
-        // durationUnit is ms
-        val duration = convertDuration(this.snapshot.get99thPercentile())
+    private fun Histogram.getMetricsList(): List<Any> {
+        // histogram is ns
+        val durationp99 = this.snapshot.get99thPercentile() / 1_000_000
+        val durationavg = this.snapshot.getMean() / 1_000_000
 
-        return listOf(this.count, DecimalFormat("##.##").format(duration), DecimalFormat("##.##").format(this.oneMinuteRate))
+        return listOf(this.count, DecimalFormat("##.##").format(durationp99), DecimalFormat("##.##").format(durationavg))
     }
 
     override fun report(gauges: SortedMap<String, Gauge<Any>>?,
@@ -74,23 +72,17 @@ class FileReporter(registry: MetricRegistry, outputFileName: String, command: St
 
         buffer.write(timestamp.toString() + "," + elapsedTime.toString() + ",")
 
-        val writeRow = timers!!["mutations"]!!
-                .getMetricsList()
-                .joinToString(",", postfix = ",")
-
-        buffer.write(writeRow)
-
-        val readRow = timers["selects"]!!
-                .getMetricsList()
-                .joinToString(",", postfix = ",")
-
-        buffer.write(readRow)
-
-        val deleteRow = timers["deletions"]!!
-                .getMetricsList()
-                .joinToString(",", postfix = ",")
-
-        buffer.write(deleteRow)
+        if(histograms != null && histograms.containsKey("tmpallops")) {
+            val tmpallopsRow = histograms["tmpallops"]!!
+                    .getMetricsList()
+                    .joinToString(",", postfix = ",")
+            // Remove after report
+            registry.remove("tmpallops")
+            buffer.write(tmpallopsRow)
+        }
+        else {
+            buffer.write("0,0,0")
+        }
 
         val errors = meters!!["errors"]!!
         val errorRow = listOf(errors.count, DecimalFormat("##.##").format(errors.oneMinuteRate))

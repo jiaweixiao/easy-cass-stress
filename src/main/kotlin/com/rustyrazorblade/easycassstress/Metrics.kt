@@ -52,6 +52,8 @@ class Metrics(val metricRegistry: MetricRegistry, val reporters: List<ScheduledR
     val mutations = metricRegistry.timer("mutations")
     val selects = metricRegistry.timer("selects")
     val deletions = metricRegistry.timer("deletions")
+    // Histogram used to report succeed ops, it will be removed after each report.
+    val tmpallops = metricRegistry.histogram("tmpallops")
 
     val populate = metricRegistry.timer("populateMutations")
 

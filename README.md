@@ -1,9 +1,9 @@
 # Changes
 ## Changes to file reporter :
-1. Change format to
+1. Report ops on success, and reset it after each report.
     ```csv
-    ,,Mutations,,,Reads,,,Deletes,,,Errors,,InFlights,RequestQueueDepth
-    Epoch Time (ms), Elapsed Time (ms),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,Latency (us) (p99),1min (req/s),Count,1min (errors/s),Count,Count
+    ,,Success,,,Errors,,InFlights,RequestQueueDepth
+    Epoch Time (ms), Elapsed Time (ms), Delta Count, Latency (us) (p99), Accum Count, 1min (errors/s), Current Count, Current Count
     ```
 2. Replace `Instant.now()` with `System.currentTimeMillis()` to get timestamp.
 3. Add option `--reportinterval` in millisecond to control report interval.
